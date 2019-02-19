@@ -33,13 +33,14 @@ HttpReadRequest::~HttpReadRequest()
 
 bool HttpReadRequest::buildSslSocket()
 {
-#ifndef QT_NO_OPENSSL
+#ifndef QT_NO_SSL
     if(ssl)
     {
-        socket = new QSslSocket;
-        ((QSslSocket*)socket)->setSslConfiguration(*ssl);
-        socket->setSocketDescriptor(socketDescriptor);
-        ((QSslSocket*)socket)->startServerEncryption();
+        auto *sslSocket = new QSslSocket;
+        socket = sslSocket;
+        sslSocket->setSslConfiguration(*ssl);
+        sslSocket->setSocketDescriptor(socketDescriptor);
+        sslSocket->startServerEncryption();
         return true;
     }
 #endif
@@ -64,8 +65,7 @@ void HttpReadRequest::run()
     {
         if(socket->waitForReadyRead())
         {
-            QByteArray req(std::move(socket->readAll()));
-            qDebug() << req;
+            QByteArray req(socket->readAll());
 
             HttpParser parser(req);
             if(parser.valid)
@@ -91,7 +91,7 @@ void HttpReadRequest::run()
                         const QString &key = it.key();
                         if(key.endsWith('*'))
                         {
-                            QString trueUrl(std::move(key.mid(0, key.size() - 1)));
+                            QString trueUrl(key.mid(0, key.size() - 1));
                             if(url.startsWith(trueUrl))
                             {
                                 url = trueUrl + "*";
@@ -138,7 +138,11 @@ bool HttpReadRequest::readBody(HttpParser &parser, Request &request, Response &r
     {
         if(socket->waitForReadyRead(10))
         {
-            content += socket->readAll();
+            if (content.size() > maxUploadFile) {
+                socket->readAll();
+            } else {
+                content += socket->readAll();
+            }
         }
 
         int spendTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
@@ -148,7 +152,7 @@ bool HttpReadRequest::readBody(HttpParser &parser, Request &request, Response &r
             content.remove(contentLength, content.size());
             break;
         }
-        else if(content.size() == contentLength)
+        if(content.size() == contentLength)
         {
             break;
         }
@@ -157,6 +161,7 @@ bool HttpReadRequest::readBody(HttpParser &parser, Request &request, Response &r
             break;
         }
     }
+
     if(content.size() > maxUploadFile)
     {
         request.getRequestDispatcher(STATUS::STATUS_403).forward(request, response);

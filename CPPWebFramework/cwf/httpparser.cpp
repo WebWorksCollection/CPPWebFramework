@@ -37,10 +37,10 @@ bool HttpParser::extractHeaderAndBody(QByteArray &httpMessage)
 void HttpParser::doParseHttpHeader(QByteArray &httpMessage)
 {
     httpMessage.replace("\r", "");
-    QByteArrayList lines(std::move(httpMessage.split('\n')));
+    QByteArrayList lines(httpMessage.split('\n'));
     QByteArrayList firstHeaderLine;
-    if(lines.size() > 0)
-        firstHeaderLine = std::move(lines[0].split(' '));
+    if(!lines.empty())
+        firstHeaderLine = lines[0].split(' ');
 
     if(firstHeaderLine.size() < 3)
     {
@@ -48,7 +48,7 @@ void HttpParser::doParseHttpHeader(QByteArray &httpMessage)
         return;
     }
 
-    method      = std::move(firstHeaderLine[0].toUpper());
+    method      = firstHeaderLine[0].toUpper();
     url         = std::move(firstHeaderLine[1]);
     httpVersion = std::move(firstHeaderLine[2]);
     doParseUrl();
@@ -60,7 +60,7 @@ void HttpParser::doParseHttpHeader(QByteArray &httpMessage)
         if(line.isEmpty())
             continue;
         column = line.indexOf(':');
-        headerField.insert(std::move(line.left(column).trimmed()), std::move(line.mid(column + 1).trimmed()));
+        headerField.insert(line.left(column).trimmed(), line.mid(column + 1).trimmed());
     }
 
     contentLenght = headerField.value(HTTP::CONTENT_LENGTH).toLongLong();
@@ -85,21 +85,21 @@ void HttpParser::doParseUrl()
 {
     if(url.contains("?") && url.contains("="))
     {
-        QByteArrayList realUrl(std::move(url.split('?')));
+        QByteArrayList realUrl(url.split('?'));
         url = std::move(realUrl[0]);
 
         QByteArrayList tempParam;
         if(realUrl.size() > 1)
-            tempParam = std::move(realUrl[1].split('&'));
+            tempParam = realUrl[1].split('&');
 
         int size = tempParam.size();
         for(int i = 0; i < size; ++i)
         {
-            QByteArrayList p(std::move(tempParam[i].split('=')));
+            QByteArrayList p(tempParam[i].split('='));
             if(p.size() == 2)
-                parameters.insert(std::move(p[0]), std::move(p[1]));
+                parameters.insert(p[0], p[1]);
             else if(p.size() == 1)
-                parameters.insert(std::move(p[0]), std::move(""));
+                parameters.insert(p[0], "");
         }
     }
 }
@@ -108,24 +108,24 @@ void HttpParser::doParseBody()
 {
     if(body.contains("&"))
     {
-        QByteArrayList tempBody(std::move(body.split('&')));
+        QByteArrayList tempBody(body.split('&'));
         int size = tempBody.size();
         for(int i = 0; i < size; ++i)
         {
-            QByteArrayList p(std::move(tempBody[i].split('=')));
+            QByteArrayList p(tempBody[i].split('='));
             if(p.size() == 2)
-                parameters.insert(std::move(p[0]), std::move(p[1]));
+                parameters.insert(p[0], p[1]);
             else if(p.size() == 1)
-                parameters.insert(std::move(p[0]), std::move(""));
+                parameters.insert(p[0], "");
         }
     }
     else
     {
-        QByteArrayList p(std::move(body.split('=')));
+        QByteArrayList p(body.split('='));
         if(p.size() == 2)
-            parameters.insert(std::move(p[0]), std::move(p[1]));
+            parameters.insert(p[0], p[1]);
         else if(p.size() == 1)
-            parameters.insert(std::move(p[0]), std::move(""));
+            parameters.insert(p[0], "");
     }
 }
 
@@ -135,8 +135,8 @@ void HttpParser::extractCookies()
     int size = temp.size();
     for(int i = 0; i < size; ++i)
     {
-        const QByteArray &txt = temp[i];
-        QList<QNetworkCookie> cookiesList = std::move(QNetworkCookie::parseCookies(txt));
+        const QByteArray &txt = temp[i].replace(";", ";\n");;
+        QList<QNetworkCookie> cookiesList = QNetworkCookie::parseCookies(txt);
         for(QNetworkCookie &cookie : cookiesList)
         {
             if(cookie.name() == HTTP::SESSION_ID)
@@ -151,7 +151,7 @@ void HttpParser::doParseFiles()
     if(!body.startsWith(HTTP::CONTENT_DISPOSITION_COLON))
         body.remove(0, body.indexOf(HTTP::CONTENT_DISPOSITION_COLON));
 
-    QByteArrayList cont(std::move(body.split('\n')));
+    QByteArrayList cont(body.split('\n'));
     body.clear();
     int total = cont.size();
     QByteArray fileName;
@@ -168,7 +168,7 @@ void HttpParser::doParseFiles()
                     files.insert(fileName, body);
                     body.clear();
                 }
-                QByteArrayList tmp(std::move(temp.split('=')));
+                QByteArrayList tmp(temp.split('='));
                 for(int j = 0; j < tmp.size(); ++j)
                 {
                     QByteArray &name = tmp[j];

@@ -16,23 +16,23 @@ CWF_BEGIN_NAMESPACE
 
 Request::Request(QTcpSocket &socket,
                  QMapThreadSafety<QString, Session *> &sessions,
-                 const Configuration &configuration) : socket(&socket),
+                 const Configuration &configuration) : socket(socket),
                                                        sessions(sessions),
                                                        configuration(configuration)
 {    
 }
 
-Request::~Request()
+Request::~Request() noexcept
 {
     delete requestDispatcher;
 }
 
-void Request::fillQObject(QObject *object)
+void Request::fillQObject(QObject *object, bool urlDecode, bool replacePlusForSpace)
 {
-    fillQObject(object, httpParser->getParameters());
+    fillQObject(object, httpParser->getParameters(), urlDecode, replacePlusForSpace);
 }
 
-void Request::fillQObject(QObject *object, const QMap<QByteArray, QByteArray> &parameters)
+void Request::fillQObject(QObject *object, const QMap<QByteArray, QByteArray> &parameters, bool urlDecode, bool replacePlusForSpace)
 {
     MetaClassParser meta(object);
 
@@ -46,14 +46,18 @@ void Request::fillQObject(QObject *object, const QMap<QByteArray, QByteArray> &p
             method[0] = method[0].toUpper();
             method = GET_SET::SET_LOWER + method;
 
-            QString parameterType(std::move(meta.getParameterType(method)));
+            QString parameterType(meta.getParameterType(method));
 
             if(parameterType == CSTL::SUPPORTED_TYPES::QSTRING)
             {
+                if(urlDecode)
+                    value = URLEncoder::paramDecode(value.toLatin1(), replacePlusForSpace);
                 QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(QString, value));
             }
             else if(parameterType == CSTL::SUPPORTED_TYPES::STD_STRING)
             {
+                if(urlDecode)
+                    value = URLEncoder::paramDecode(value.toLatin1(), replacePlusForSpace);
                 QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(std::string, value.toStdString()));
             }
             else if(parameterType == CSTL::SUPPORTED_TYPES::BOOL)
@@ -70,15 +74,15 @@ void Request::fillQObject(QObject *object, const QMap<QByteArray, QByteArray> &p
             {
                 if(value.isEmpty())
                     value.push_back(' ');
-                QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(unsigned char, (unsigned char)value.toStdString()[0]));
+                QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(unsigned char, static_cast<unsigned char>(value.toStdString()[0])));
             }
             else if(parameterType == CSTL::SUPPORTED_TYPES::SHORT)
             {
-                QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(short, (short)value.toInt()));
+                QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(short, static_cast<short>(value.toInt())));
             }
             else if(parameterType == CSTL::SUPPORTED_TYPES::UNSIGNED_SHORT)
             {
-                QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(unsigned short, value.toInt()));
+                QMetaObject::invokeMethod(object, method.toStdString().data(), Q_ARG(unsigned short, static_cast<unsigned short>(value.toInt())));
             }
             else if(parameterType == CSTL::SUPPORTED_TYPES::INT)
             {

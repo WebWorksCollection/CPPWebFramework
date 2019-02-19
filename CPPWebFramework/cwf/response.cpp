@@ -11,7 +11,7 @@
 
 CWF_BEGIN_NAMESPACE
 
-Response::Response(QTcpSocket &socket, const Configuration &configuration) : socket(&socket),
+Response::Response(QTcpSocket &socket, const Configuration &configuration) : socket(socket),
                                                                              configuration(configuration)
 
 {
@@ -33,7 +33,7 @@ void sendBytes(QTcpSocket &socket, const QByteArray &text, int timeOut)
 
 void buildHeadersString(QByteArray &temp, const QMap<QByteArray, QByteArray> &headers)
 {
-    QList<QByteArray> headersList(std::move(headers.keys()));
+    QList<QByteArray> headersList(headers.keys());
 
     for(const auto &i : headersList)
     {
@@ -88,39 +88,39 @@ void Response::flushBuffer()
         bool biggerThanLimit = content.size() > max;
         headers.insert(HTTP::CONTENT_LENGTH, QByteArray::number(content.size()));
         headers.insert(HTTP::SERVER, HTTP::SERVER_VERSION);
-        headers.insert(HTTP::DATA, QByteArray(std::move(QDateTime::currentDateTime().toString("ddd, dd MMM yyyy hh:mm:ss").toLatin1() + " GMT")));
+        headers.insert(HTTP::DATA, QByteArray(QDateTime::currentDateTime().toString("ddd, dd MMM yyyy hh:mm:ss").toLatin1() + " GMT"));
 
         if(!biggerThanLimit)
         {
-            sendHeaders(statusCode, timeOut, statusText, headers, cookies, *socket);
-            sendBytes(*socket, content, timeOut);
+            sendHeaders(statusCode, timeOut, statusText, headers, cookies, socket);
+            sendBytes(socket, content, timeOut);
         }
         else
         {
             headers.insert(HTTP::TRANSFER_ENCODING, HTTP::CHUNKED);
-            sendHeaders(statusCode, timeOut, statusText, headers, cookies, *socket);
+            sendHeaders(statusCode, timeOut, statusText, headers, cookies, socket);
             int total = (content.size() / max) + 1, last = 0;
 
             QVector<QByteArray> vetor;
             for(int i = 0; i < total; ++i)
             {
-                vetor.push_back(std::move(content.mid(last, max)));
+                vetor.push_back(content.mid(last, max));
                 last += max;
             }
 
-            for(int i = 0; i < vetor.size(); ++i)
+            for(auto &i : vetor)
             {
-                QByteArray data(std::move(vetor[i]));
+                QByteArray data(std::move(i));
                 if(!data.isEmpty())
-                {                    
-                    sendBytes(*socket, (QByteArray::number(data.size(), 16) + HTTP::END_LINE), timeOut);
-                    sendBytes(*socket, data, timeOut);
-                    sendBytes(*socket, HTTP::END_LINE, timeOut);
+                {
+                    sendBytes(socket, (QByteArray::number(data.size(), 16) + HTTP::END_LINE), timeOut);
+                    sendBytes(socket, data, timeOut);
+                    sendBytes(socket, HTTP::END_LINE, timeOut);
                 }
             }
-            sendBytes(*socket, HTTP::END_OF_MENSAGE_WITH_ZERO, timeOut);
+            sendBytes(socket, HTTP::END_OF_MENSAGE_WITH_ZERO, timeOut);
         }
-        socket->disconnectFromHost();
+        socket.disconnectFromHost();
         content.clear();
     }
 }
@@ -128,15 +128,15 @@ void Response::flushBuffer()
 void Response::sendError(int sc, const QByteArray &msg)
 {
     int timeOut = configuration.getTimeOut();
-    sendHeaders(statusCode, timeOut, statusText, headers, cookies, *socket);
-    sendBytes(*socket, "<html><body><h1>" + QByteArray::number(sc) + " " + msg + "</h1></body></html>", timeOut);
+    sendHeaders(statusCode, timeOut, statusText, headers, cookies, socket);
+    sendBytes(socket, "<html><body><h1>" + QByteArray::number(sc) + " " + msg + "</h1></body></html>", timeOut);
 }
 
 void Response::write(const QJsonObject &json, bool writeContentType)
 {
     if(writeContentType)
         addHeader(CWF::HTTP::CONTENT_TYPE, CWF::HTTP::APPLICATION_JSON);
-    content = std::move(QJsonDocument(json).toJson());
+    content = QJsonDocument(json).toJson();
     flushBuffer();
 }
 
@@ -144,7 +144,7 @@ void Response::write(const QJsonArray &array, bool writeContentType)
 {
     if(writeContentType)
         addHeader(CWF::HTTP::CONTENT_TYPE, CWF::HTTP::APPLICATION_JSON);
-    content = std::move(QJsonDocument(array).toJson());
+    content = QJsonDocument(array).toJson();
     flushBuffer();
 }
 

@@ -6,6 +6,8 @@
 */
 
 #include "cstlcompiler.h"
+
+#include <utility>
 #include "cstlcompilerattributes.h"
 #include "cstlcompilerfor.h"
 #include "cstlcompilerobject.h"
@@ -15,10 +17,10 @@
 
 CWF_BEGIN_NAMESPACE
 
-CSTLCompiler::CSTLCompiler(const QByteArray &str, const QString &path,
+CSTLCompiler::CSTLCompiler(const QByteArray &str, QString path,
                            QMap<QString, QObject *> &objects,
                            bool isStrFileName) : str(str),
-                                                 path(path),
+                                                 path(std::move(path)),
                                                  objects(objects),
                                                  isStrFileName(isStrFileName)
 {
@@ -38,7 +40,7 @@ QByteArray CSTLCompiler::openFile(QXmlStreamReader &xml)
             return "<html><body>" + file.errorString().toUtf8() + "</body></html>";
         }
 
-        QByteArray content(std::move(file.readAll()));
+        QByteArray content(file.readAll());
         file.close();
         if(isView)
         {
@@ -95,7 +97,7 @@ QByteArray CSTLCompiler::getBody(QXmlStreamReader &xml, const QString &tagName)
             {
                 ++start;
             }
-            attributes = std::move(compilerAttributes.getAttributes(xml.attributes()));
+            attributes = compilerAttributes.getAttributes(xml.attributes());
             for(it = attributes.begin(); it != attributes.end(); ++it)
             {
                 att += " " + it.key() + "=\"" + it.value() + "\"";
@@ -153,7 +155,7 @@ QByteArray CSTLCompiler::processForTag(QXmlStreamReader &xml)
         items.replace("#{", "").replace("}", "");
         if(objects.contains(items))
         {
-            QObject *object = (QObject*)objects[items];
+            auto *object = static_cast<QObject*>(objects[items]);
             QString type(object->metaObject()->className());
 
             if(!items.isEmpty())
@@ -165,8 +167,8 @@ QByteArray CSTLCompiler::processForTag(QXmlStreamReader &xml)
                 }
                 else
                 {
-                    QListObject *qListObject = static_cast<QListObject*>(object);
-                    QString ret(std::move(getBody(xml, CSTL::TAG::FOR)));
+                    auto *qListObject = dynamic_cast<QListObject*>(object);
+                    QString ret(getBody(xml, CSTL::TAG::FOR));
                     QString var(forAttributes.attributes[CSTL::TAG::PROPERTY::VAR]);
                     var.replace("#{", "").replace("}", "");
                     for(int iL = 0; iL < qListObject->size(); ++iL)
@@ -184,7 +186,7 @@ QByteArray CSTLCompiler::processForTag(QXmlStreamReader &xml)
             int from      = forAttributes.attributes[CSTL::TAG::PROPERTY::FOR::FROM].toInt();
             int to        = forAttributes.attributes[CSTL::TAG::PROPERTY::FOR::TO].toInt();
             int increment = forAttributes.attributes[CSTL::TAG::PROPERTY::FOR::INCREMENT].toInt();
-            QString tagBody(std::move(getBody(xml, CSTL::TAG::FOR)));
+            QString tagBody(getBody(xml, CSTL::TAG::FOR));
             QString &var = forAttributes.attributes[CSTL::TAG::PROPERTY::VAR];
             for(int i = from; i <= to; i += increment)
             {
@@ -237,7 +239,7 @@ QByteArray CSTLCompiler::processIfTag(QXmlStreamReader &xml)
         }
 
         CSTLCompilerAttributes compilerAttributes(objects);
-        QString tagBody(std::move(getBody(xml, CSTL::TAG::IF)));
+        QString tagBody(getBody(xml, CSTL::TAG::IF));
         compilerAttributes.compileAttributes(ifAttributes.attributes);
 
         bool isTrue = false;
@@ -326,14 +328,14 @@ QByteArray CSTLCompiler::processXml(QXmlStreamReader &xml)
     while(!xml.atEnd())
     {
         CSTLCompilerAttributes compilerAttributes(objects);
-        QString name(std::move(xml.name().toString().toLower()));
-        QString text(std::move(xml.text().toString()));
+        QString name(xml.name().toString().toLower());
+        QString text(xml.text().toString());
         QString tagAttributes;
         QMap<QString, QString> attr;
 
         if(name == CSTL::TAG::OUT && xml.isStartElement())
         {
-            attr = std::move(compilerAttributes.getAttributes(xml.attributes()));
+            attr = compilerAttributes.getAttributes(xml.attributes());
             htmlOut += processOutTag(attr);
             name.clear();
         }
@@ -365,7 +367,7 @@ QByteArray CSTLCompiler::processXml(QXmlStreamReader &xml)
         {
             if(name != CSTL::TAG::OUT && name != CSTL::TAG::IF && name != CSTL::TAG::FOR)
             {
-                attr = std::move(compilerAttributes.getAttributes(xml.attributes()));
+                attr = compilerAttributes.getAttributes(xml.attributes());
                 tagAttributes = compilerAttributes.buildAttributes(attr);
                 if(xml.isStartElement())
                 {
@@ -396,7 +398,7 @@ QByteArray CSTLCompiler::processXml(QXmlStreamReader &xml)
 QByteArray CSTLCompiler::output()
 {
     QXmlStreamReader xml;
-    QByteArray htmlOutput(std::move(openFile(xml)));
+    QByteArray htmlOutput(openFile(xml));
     if(isView)
     {
         if(htmlOutput.isEmpty())

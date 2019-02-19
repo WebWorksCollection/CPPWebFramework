@@ -30,7 +30,7 @@ QJsonObject SqlQuery::validate(const QJsonObject &json, const QString &table)
     {
         return QJsonObject{{"success", false}, {"message", "JSON is empty"}};
     }
-    else if(table.isEmpty())
+    if(table.isEmpty())
     {
         return QJsonObject{{"success", false}, {"message", "Table name is empty"}};
     }
@@ -43,7 +43,7 @@ void SqlQuery::loadColumns()
     columns.resize(total);
     for(int i = 0; i < total; ++i)
     {
-        columns[i] = std::move(record().fieldName(i));
+        columns[i] = record().fieldName(i);
     }
 }
 
@@ -65,7 +65,7 @@ QJsonObject SqlQuery::exec(const QString &query)
 QJsonArray SqlQuery::toJson()
 {
     QJsonArray array;
-    QString error(std::move(lastError().text()));
+    QString error(lastError().text());
     if(!error.trimmed().isEmpty())
     {
         array.push_back(QJsonObject{{"success", false}, {"message", error}});

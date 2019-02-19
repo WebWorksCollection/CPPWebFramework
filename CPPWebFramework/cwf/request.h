@@ -14,11 +14,13 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include "httpparser.h"
+#include "urlencoder.h"
 #include "session.h"
 #include "filemanager.h"
 #include "configuration.h"
 #include "requestdispatcher.h"
 #include "cppwebframework_global.h"
+
 
 CWF_BEGIN_NAMESPACE
 /**
@@ -28,7 +30,7 @@ class CPPWEBFRAMEWORKSHARED_EXPORT Request
 {
     friend class HttpReadRequest;
     friend class RequestDispatcher;
-    QTcpSocket         *socket;
+    QTcpSocket         &socket;
     Session            *session            = nullptr;
     HttpParser         *httpParser         = nullptr;
     RequestDispatcher  *requestDispatcher  = nullptr;
@@ -47,7 +49,7 @@ public:
     /**
      * @brief Destroys dynamically allocated resources.
      */
-    virtual ~Request() noexcept;
+    ~Request() noexcept;
     /**
      * @brief This method add attributes that will be passed to a view page.
      * The object can be processed within a page using view CSTL. For this to be possible the object must
@@ -133,7 +135,10 @@ public:
      * @param decode : If true, decode the parameter.
      * @return QByteArray
      */
-    QByteArray getParameter(const QByteArray &name) const noexcept { return httpParser->getParameter(name); }
+    QByteArray getParameter(const QByteArray &name, bool urlDecode = true, bool replacePlusForSpace = true) const noexcept
+    {
+        return httpParser->getParameter(name, urlDecode, replacePlusForSpace);
+    }
     /**
      * @brief This method returns the parameters from a request given an specific name.
      * @param name : This is a reference to a QByteArray.     
@@ -144,7 +149,7 @@ public:
      * @brief This method returns a reference to the current socket.
      * @return QTcpSocket
      */
-    inline QTcpSocket &getSocket() const noexcept { return *socket; }
+    inline QTcpSocket &getSocket() const noexcept { return socket; }
     /**
      * @brief This method returns the path.
      * @return QString
@@ -330,9 +335,11 @@ public:
      * }
      * @endcode
      */
-    void fillQObject(QObject *object);
+    void fillQObject(QObject *object, bool urlDecode = true, bool replacePlusForSpace = true);
 
-    void fillQObject(QObject *object, const QMap<QByteArray, QByteArray> &parameters);
+    void fillQObject(QObject *object,
+                     const QMap<QByteArray, QByteArray> &parameters,
+                     bool urlDecode = true, bool replacePlusForSpace = true);
 };
 
 CWF_END_NAMESPACE

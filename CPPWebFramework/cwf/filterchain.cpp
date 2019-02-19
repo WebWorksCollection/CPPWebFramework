@@ -35,10 +35,9 @@ void FilterChain::doFilter(CWF::Request &request, CWF::Response &response)
     }
     else
     {
-        FileManager fileManager;
         QString url  = request.getRequestURL();
         QString path = request.getPath();
-        const QString &extention = fileManager.fileExtention(url);
+        const QString &extention = CWF::FileManager::fileExtention(url);
 
         if(url == FILE_EXTENTION::BAR)
         {
@@ -142,9 +141,17 @@ void FilterChain::doFilter(CWF::Request &request, CWF::Response &response)
         {
             write(response, path, url, HTTP::CONTENT_TYPE, HTTP::APPLICATION_POSTSCRIPT);
         }
+        else if (extention == FILE_EXTENTION::WOFF || extention == FILE_EXTENTION::WOFF2)
+        {
+            write(response, path, url, HTTP::CONTENT_TYPE, HTTP::APPLICATION_FONT_WOFF);
+        }
+        else if (extention == FILE_EXTENTION::EOT || extention == FILE_EXTENTION::TTF)
+        {
+            write(response, path, url, HTTP::CONTENT_TYPE, HTTP::APPLICATION_FONT_TTF);
+        }
         else if(extention == FILE_EXTENTION::INI)
         {
-            QString file(std::move(fileManager.fileName(url)));
+            QString file(CWF::FileManager::fileName(url));
             if(file != CONFIGURATION::CPP_WEB_INI)
                 write(response, path, url, HTTP::CONTENT_TYPE, ("text/" + extention.toLatin1() + "; charset=UTF-8") );
             else if(configuration.getAccessServerPages())

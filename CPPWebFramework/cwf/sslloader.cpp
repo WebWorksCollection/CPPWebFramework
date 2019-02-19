@@ -4,10 +4,11 @@
 #include <QSslKey>
 #include <QSslCertificate>
 #include <QSslConfiguration>
+#include <utility>
 
 CWF_BEGIN_NAMESPACE
 
-SslLoader::SslLoader(const Configuration &configuration) : configuration(configuration)
+SslLoader::SslLoader(Configuration configuration) : configuration(std::move(configuration))
 {
 }
 
@@ -28,7 +29,7 @@ QSslConfiguration *buildSslConfiguration(const QSslKey &keySsl,
                                          const QSslCertificate &certificateSsl,
                                          const Configuration &configuration)
 {
-    QSslConfiguration *temp = new QSslConfiguration;
+    auto *temp = new QSslConfiguration;
     temp->setProtocol(configuration.getSslProtocol());
     temp->setPeerVerifyMode(configuration.getSslPeerVerifyMode());
     temp->setPrivateKey(keySsl);
@@ -38,15 +39,15 @@ QSslConfiguration *buildSslConfiguration(const QSslKey &keySsl,
 
 QSslConfiguration *SslLoader::getSslConfiguration() const
 {
-#ifdef QT_NO_OPENSSL
+#ifdef QT_NO_SSL
     qDebug() << "Secure Sockets Layer (SSL) is not supported, please check your configuration.";
     return nullptr;
 #else
     if(!configuration.getSslKeyFile().isEmpty() && !configuration.getSslCertFile().isEmpty())
     {
         bool okKey, okCert;
-        QByteArray myKeyStr(std::move(getFileContent(configuration.getSslKeyFile(), okKey)));
-        QByteArray myCertificateStr(std::move(getFileContent(configuration.getSslCertFile(), okCert)));
+        QByteArray myKeyStr(getFileContent(configuration.getSslKeyFile(), okKey));
+        QByteArray myCertificateStr(getFileContent(configuration.getSslCertFile(), okCert));
 
         if(!okKey || !okCert)
         {

@@ -1,5 +1,6 @@
 [![GitHub issues](https://img.shields.io/github/issues/HerikLyma/CPPWebFramework.svg)](https://github.com/HerikLyma/CPPWebFramework/issues)
 [![Travis-CI](https://travis-ci.org/HerikLyma/CPPWebFramework.svg?branch=master)](https://travis-ci.org/HerikLyma/CPPWebFramework)
+[![Build status](https://ci.appveyor.com/api/projects/status/d8u7th2wl1qro6m2?svg=true)](https://ci.appveyor.com/project/HerikLyma/cppwebframework)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8b818182369744f0af42a52785f7b5fe)](https://www.codacy.com/app/HerikLyma/CPPWebFramework?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=HerikLyma/CPPWebFramework&amp;utm_campaign=Badge_Grade)
 [![Language (C++)](https://img.shields.io/badge/powered_by-C++-green.svg?style=flat-square)](https://isocpp.org/)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/HerikLyma/CPPWebFramework/blob/master/LICENSE.txt)
@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
 
 </br><hr/><b>Installation</b></br>
 <ol>
-    <li>Download and install Qt 5.5 or higher: https://www.qt.io/download-open-source/</li>
+    <li>Download and install Qt 5.9 or higher: https://www.qt.io/download-open-source/</li>
     <li>Open the terminal</li>
     <li>Install Qt Libraries: sudo apt-get install qt5-default (Linux)</li>
     <li>Make a project clone: git clone https://github.com/HerikLyma/CPPWebFramework.git</li>
@@ -166,8 +167,15 @@ int main(int argc, char *argv[])
     <li>Change the path in the main.cpp file: CWF::CppWebApplication a(argc, argv, "/PATH_TO_EXAMPLE/server/");</li>
     <li>Run the project</li>
     <li>Open your browser and type: http://localhost:8080 to check if the server is online</li>
-</ol>
+</ol><hr/>
 
+<b>Steps to test the C++ Web Framework's HelloWorldDocker example with Docker containers</b></br>
+<ol>
+    <li>Install Docker</li>
+    <li>sudo docker run -d -p 80:80 imacellone/cwf-helloworld:1.0</li>
+    <li>Open your browser and type: http://localhost to check if the server is online</li>
+    <li>If you want to test your own examples, please follow the steps demonstrated on the CPPWebFramework/examples/helloworld.Dockerfile file, build and run the image.</li>
+</ol>
 <hr/><b>Site and documentation:</b> https://www.cppwebframework.com <br>
 <b>cppwebframework mailing list:</b> https://groups.google.com/forum/#!forum/cppwebframework <br>
 <b>Videos:</b> https://www.youtube.com/channel/UCf-Jt44A1k-PQ6z_mhN2GYQ

@@ -21,22 +21,21 @@ CSTLCompilerImport::CSTLCompilerImport(const QXmlStreamAttributes &attr, QString
     }
     else if(size == 1)
     {
-         QString name(std::move(attr[0].name().toString().toLower()));
-         QString value(std::move(attr[0].value().toString()));
+         QString name(attr[0].name().toString().toLower());
+         QString value(attr[0].value().toString());
 
          if(name != CSTL::TAG::PROPERTY::IMPORT::URL)
          {
              attributes.insert(CSTL::TAG::PROPERTY::ERROR, "***ERROR IMPORT TAG - IMPORT TAG NEEDS THE URL ATTRIBUTE***");
          }
          else
-         {             
-             FileManager fileManager;
-             fileManager.removeLastBar(path);
+         {
+             CWF::FileManager::removeLastBar(path);
 
              path += value;
 
              QFile::FileError fileError;
-             attributes.insert(CSTL::TAG::PROPERTY::IMPORT::URL, fileManager.readAll(path, fileError));
+             attributes.insert(CSTL::TAG::PROPERTY::IMPORT::URL, CWF::FileManager::readAll(path, fileError));
          }
     }
     else
