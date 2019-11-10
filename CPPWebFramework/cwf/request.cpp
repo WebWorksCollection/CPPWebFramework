@@ -11,7 +11,7 @@
 #include "response.h"
 #include "urlencoder.h"
 #include <QUuid>
-
+//  clazy:excludeall=connect-not-normalized
 CWF_BEGIN_NAMESPACE
 
 Request::Request(QTcpSocket &socket,
@@ -129,7 +129,7 @@ RequestDispatcher &Request::getRequestDispatcher(const QString &page)
 
 Session &Request::getSession()
 {
-    QMutex mutex;
+    static QMutex mutex;
     QMutexLocker locker(&mutex);
     qint64 currentTimeInt = QDateTime::currentMSecsSinceEpoch();
     qint64 expiration = configuration.getSessionExpirationTime();
